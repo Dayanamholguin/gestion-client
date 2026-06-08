@@ -288,13 +288,16 @@ function EmpleadosPage() {
     setEmpleadoEditando(empleado);
   };
 
-  const formatearFecha = (fecha) =>
-    new Date(fecha).toLocaleDateString("es-CO", {
+  const formatearFecha = (fecha) => {
+    if (!fecha) return "—";
+    const [y, m, d] = String(fecha).split("T")[0].split("-");
+    return new Date(Number(y), Number(m) - 1, Number(d)).toLocaleDateString("es-CO", {
       weekday: "long",
       day: "2-digit",
       month: "long",
       year: "numeric",
     });
+  };
 
   const actualizarEstadosMasivos = async (estado) => {
     try {

@@ -103,7 +103,8 @@ function formatValor(key, value) {
   }
   if (key === "activo" || key === "graduado") return Number(value) ? "Sí" : "No";
   if (FECHA_CAMPOS.has(key)) {
-    const d = new Date(value);
+    const parts = String(value).split("T")[0].split("-");
+    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
     return isNaN(d.getTime()) ? String(value)
       : d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
   }

@@ -27,7 +27,8 @@ const NIVEL_PREFIJOS = {
 
 const formatFecha = (fecha) => {
   if (!fecha) return "—";
-  return new Date(fecha).toLocaleDateString("es-CO", {
+  const [y, m, d] = String(fecha).split("T")[0].split("-");
+  return new Date(Number(y), Number(m) - 1, Number(d)).toLocaleDateString("es-CO", {
     day: "2-digit",
     month: "short",
     year: "numeric",

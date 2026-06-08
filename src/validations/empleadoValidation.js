@@ -58,9 +58,11 @@ export const validarEmpleado = ({
 
   const hoy = new Date();
 
-  const nacimientoDate = new Date(fechaNacimiento);
+  const [yN, mN, dN] = String(fechaNacimiento).split("-");
+  const nacimientoDate = new Date(Number(yN), Number(mN) - 1, Number(dN));
 
-  const ingresoDate = new Date(fechaIngreso);
+  const [yI, mI, dI] = String(fechaIngreso).split("-");
+  const ingresoDate = new Date(Number(yI), Number(mI) - 1, Number(dI));
 
   let edad = hoy.getFullYear() - nacimientoDate.getFullYear();
 

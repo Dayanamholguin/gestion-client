@@ -285,7 +285,8 @@ function GestionForm({
             const valor = e.target.value;
             setFechaNacimiento(valor);
             const hoy = new Date();
-            const nacimientoDate = new Date(valor);
+            const [yN, mN, dN] = valor.split("-");
+            const nacimientoDate = new Date(Number(yN), Number(mN) - 1, Number(dN));
             let edad = hoy.getFullYear() - nacimientoDate.getFullYear();
             const mesActual = hoy.getMonth();
             const mesNacimiento = nacimientoDate.getMonth();
