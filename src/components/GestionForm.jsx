@@ -2,6 +2,7 @@ import { useContext } from "react";
 import Select from "react-select";
 import { ThemeContext } from "../App";
 import { getSelectStyles } from "../config/selectStyles";
+import CalendarioInput from "./CalendarioInput";
 
 function GestionForm({
   registrarDatos,
@@ -17,11 +18,11 @@ function GestionForm({
   cargos,
   tiposContrato,
   estadosEmpleado,
-  empresas,
+  sedes,
   cargoId, setCargoId,
   tipoContratoId, setTipoContratoId,
   estadoEmpleadoId, setEstadoEmpleadoId,
-  empresaId, setEmpresaId,
+  sedeId, setSedeId,
   errores, setErrores,
   empleadoEditando,
   limpiarFormulario,
@@ -33,12 +34,15 @@ function GestionForm({
   const cargoOptions = cargos.map((c) => ({ value: String(c.id), label: c.nombre }));
   const tipoOptions = tiposContrato.map((t) => ({ value: String(t.id), label: t.nombre }));
   const estadoOptions = estadosEmpleado.map((e) => ({ value: String(e.id), label: e.nombre }));
-  const empresaOptions = empresas.map((e) => ({ value: String(e.id), label: e.nombre }));
+  const sedeOptions = (sedes || []).map((s) => ({
+    value: String(s.id),
+    label: s.ciudad ? `${s.nombre} — ${s.ciudad}` : s.nombre,
+  }));
 
   const selectedCargo = cargoOptions.find((o) => o.value === cargoId) || null;
   const selectedTipo = tipoOptions.find((o) => o.value === tipoContratoId) || null;
   const selectedEstado = estadoOptions.find((o) => o.value === estadoEmpleadoId) || null;
-  const selectedEmpresa = empresaOptions.find((o) => o.value === empresaId) || null;
+  const selectedSede = sedeOptions.find((o) => o.value === sedeId) || null;
 
   return (
     <form
@@ -211,17 +215,17 @@ function GestionForm({
         {errores.tipoContratoId && <span className="text-sm text-red-500">{errores.tipoContratoId}</span>}
       </div>
 
-      {/* Empresa */}
+      {/* Sede */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-white">Empresa</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-white">Sede</label>
         <div className="mt-1">
           <Select
-            options={empresaOptions}
-            value={selectedEmpresa}
-            onChange={(opt) => setEmpresaId(opt?.value || "")}
-            placeholder="Seleccione..."
+            options={sedeOptions}
+            value={selectedSede}
+            onChange={(opt) => setSedeId(opt?.value || "")}
+            placeholder="Seleccione una sede..."
             isClearable
-            noOptionsMessage={() => "Sin opciones"}
+            noOptionsMessage={() => "Sin sedes activas"}
             styles={selectStyles}
             menuPortalTarget={document.body}
             menuPosition="fixed"
@@ -257,12 +261,11 @@ function GestionForm({
 
       {/* Fecha ingreso */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-white">Fecha Ingreso</label>
-        <input
-          type="date"
+        <CalendarioInput
+          label="Fecha Ingreso"
           value={fechaIngreso}
-          onChange={(e) => {
-            const valor = e.target.value;
+          diasNoLaborales={[]}
+          onChange={(valor) => {
             setFechaIngreso(valor);
             let errorIngreso = "";
             if (fechaNacimiento && valor <= fechaNacimiento) {
@@ -270,19 +273,17 @@ function GestionForm({
             }
             setErrores((prev) => ({ ...prev, fechaIngreso: errorIngreso }));
           }}
-          className="block w-full p-2 mt-1 border rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600"
         />
         {errores.fechaIngreso && <span className="text-sm text-red-500">{errores.fechaIngreso}</span>}
       </div>
 
       {/* Fecha nacimiento */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-white">Fecha Nacimiento</label>
-        <input
-          type="date"
+        <CalendarioInput
+          label="Fecha Nacimiento"
           value={fechaNacimiento}
-          onChange={(e) => {
-            const valor = e.target.value;
+          diasNoLaborales={[]}
+          onChange={(valor) => {
             setFechaNacimiento(valor);
             const hoy = new Date();
             const [yN, mN, dN] = valor.split("-");
@@ -297,7 +298,6 @@ function GestionForm({
             if (fechaIngreso && fechaIngreso <= valor) errorIngreso = "La fecha de ingreso debe ser posterior a la de nacimiento";
             setErrores((prev) => ({ ...prev, fechaNacimiento: errorNacimiento, fechaIngreso: errorIngreso }));
           }}
-          className="block w-full p-2 mt-1 border rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600"
         />
         {errores.fechaNacimiento && <span className="text-sm text-red-500">{errores.fechaNacimiento}</span>}
       </div>

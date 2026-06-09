@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import { useAuth } from "../contexts/AuthContext";
 import API_BASE from "../config/api";
 
@@ -36,7 +37,24 @@ function LoginPage() {
         return;
       }
 
-      login(data.token, data.usuario);
+      login(data.token, data.usuario, data.ultimo_acceso || null);
+
+      // Mostrar toast con última conexión
+      if (data.ultimo_acceso) {
+        const fechaConexion = new Date(data.ultimo_acceso).toLocaleString("es-CO", {
+          day: "2-digit", month: "short", year: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        });
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "info",
+          title: `Última conexión: ${fechaConexion}`,
+          showConfirmButton: false,
+          timer: 5000,
+          timerProgressBar: true,
+        });
+      }
 
       // EMPLEADO va directo a su perfil; otros van a la lista de empleados
       if (data.usuario.rol === "EMPLEADO" && data.usuario.empleado_id) {

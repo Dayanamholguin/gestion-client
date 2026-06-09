@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import API_BASE from "../config/api";
+import CalendarioInput from "../components/CalendarioInput";
 
 const TABLAS = [
   "tb_empleados", "tb_usuarios", "tb_historial_cargos",
-  "tb_estudios", "tb_experiencia_laboral",
+  "tb_estudios", "tb_experiencia_laboral", "tb_vacaciones",
 ];
 
 const ACCION_BADGE = {
@@ -24,6 +25,7 @@ const TABLA_LABEL = {
   tb_historial_cargos:   "Historial cargos",
   tb_estudios:           "Estudios",
   tb_experiencia_laboral:"Experiencia laboral",
+  tb_vacaciones:         "Vacaciones",
 };
 
 // Campos que nunca se muestran al usuario
@@ -85,6 +87,10 @@ const CAMPO_LABEL = {
   universidad_nombre:     "Universidad",
   ultimo_acceso:          "Último acceso",
   ids:                    "Empleados afectados",
+  motivo_rechazo:         "Motivo de rechazo",
+  fecha_revision:         "Fecha de revisión",
+  revisado_por:           "Revisado por",
+  revisado_por_nombre:    "Revisado por",
 };
 
 const FECHA_CAMPOS = new Set([
@@ -354,15 +360,22 @@ function AuditoriaPage() {
           </div>
           {/* Fecha desde */}
           <div>
-            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Desde</label>
-            <input type="date" name="fecha_desde" value={filtros.fecha_desde}
-              onChange={handleFiltro} className={inputClass + " w-full"} />
+            <CalendarioInput
+              label="Desde"
+              value={filtros.fecha_desde}
+              diasNoLaborales={[]}
+              onChange={(v) => setFiltros((f) => ({ ...f, fecha_desde: v }))}
+            />
           </div>
           {/* Fecha hasta */}
           <div>
-            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Hasta</label>
-            <input type="date" name="fecha_hasta" value={filtros.fecha_hasta}
-              onChange={handleFiltro} className={inputClass + " w-full"} />
+            <CalendarioInput
+              label="Hasta"
+              value={filtros.fecha_hasta}
+              diasNoLaborales={[]}
+              min={filtros.fecha_desde || undefined}
+              onChange={(v) => setFiltros((f) => ({ ...f, fecha_hasta: v }))}
+            />
           </div>
         </div>
 

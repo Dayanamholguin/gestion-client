@@ -28,6 +28,7 @@ export function AuthProvider({ children }) {
       return null;
     }
   });
+  const [ultimoAcceso, setUltimoAcceso] = useState(() => localStorage.getItem("ultimo_acceso") || null);
 
   // Ref para que el interceptor lea siempre el token más reciente
   const tokenRef = useRef(token);
@@ -36,18 +37,26 @@ export function AuthProvider({ children }) {
 
   useEffect(() => { tokenRef.current = token; }, [token]);
 
-  const login = (nuevoToken, nuevoUsuario) => {
+  const login = (nuevoToken, nuevoUsuario, prevUltimoAcceso = null) => {
     setToken(nuevoToken);
     setUsuario(nuevoUsuario);
+    setUltimoAcceso(prevUltimoAcceso);
     localStorage.setItem("auth_token", nuevoToken);
     localStorage.setItem("auth_user", JSON.stringify(nuevoUsuario));
+    if (prevUltimoAcceso) {
+      localStorage.setItem("ultimo_acceso", prevUltimoAcceso);
+    } else {
+      localStorage.removeItem("ultimo_acceso");
+    }
   };
 
   const logout = () => {
     setToken(null);
     setUsuario(null);
+    setUltimoAcceso(null);
     localStorage.removeItem("auth_token");
     localStorage.removeItem("auth_user");
+    localStorage.removeItem("ultimo_acceso");
   };
 
   logoutRef.current = logout;
@@ -100,7 +109,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ token, usuario, login, logout, tienePermiso }}>
+    <AuthContext.Provider value={{ token, usuario, ultimoAcceso, login, logout, tienePermiso }}>
       {children}
     </AuthContext.Provider>
   );

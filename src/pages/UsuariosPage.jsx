@@ -206,19 +206,20 @@ function UsuariosPage() {
   return (
     <div>
       {/* Encabezado */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between gap-3 mb-4 md:mb-6 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Gestión de Usuarios</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Administra los accesos al sistema</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">Gestión de Usuarios</h1>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">Administra los accesos al sistema</p>
         </div>
         <button
           onClick={abrirCrear}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
+          className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
-          Nuevo usuario
+          <span className="hidden sm:inline">Nuevo usuario</span>
+          <span className="sm:hidden">Nuevo</span>
         </button>
       </div>
 
@@ -274,6 +275,7 @@ function UsuariosPage() {
             {usuarios.length === 0 ? "No hay usuarios registrados" : "Sin resultados para los filtros aplicados"}
           </div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900/40">
               <tr>
@@ -370,6 +372,7 @@ function UsuariosPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

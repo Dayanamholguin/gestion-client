@@ -10,6 +10,7 @@ import { ThemeContext } from "../App";
 import { getSelectStyles } from "../config/selectStyles";
 import API_BASE from "../config/api";
 import RichTextEditor from "../components/RichTextEditor";
+import CalendarioInput from "../components/CalendarioInput";
 
 const inputClass =
   "block w-full p-2 mt-1 border rounded-md text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600";
@@ -113,7 +114,7 @@ function HistorialSection({ empleadoId, soloLectura }) {
               }`}
             >
               {!soloLectura && (
-                <td className="px-2 py-3 cursor-grab text-gray-300 dark:text-gray-600 select-none" title="Arrastra para reordenar">
+                <td className="px-2 py-3 text-gray-300 select-none cursor-grab dark:text-gray-600" title="Arrastra para reordenar">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
                     <rect y="2.5" width="16" height="1.5" rx="0.75" />
                     <rect y="7" width="16" height="1.5" rx="0.75" />
@@ -325,14 +326,22 @@ function EstudiosSection({ empleadoId, nivelesEducativos, universidades, soloLec
               </div>
             </div>
             <div>
-              <label className={labelClass}>Fecha inicio</label>
-              <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)}
-                min={fechaNacimiento || undefined} className={inputClass} />
+              <CalendarioInput
+                label="Fecha inicio"
+                value={fechaInicio}
+                onChange={setFechaInicio}
+                min={fechaNacimiento || undefined}
+                diasNoLaborales={[]}
+              />
             </div>
             <div>
-              <label className={labelClass}>Fecha fin</label>
-              <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)}
-                min={fechaInicio || undefined} className={inputClass} />
+              <CalendarioInput
+                label="Fecha fin"
+                value={fechaFin}
+                onChange={setFechaFin}
+                min={fechaInicio || undefined}
+                diasNoLaborales={[]}
+              />
             </div>
             <div className="flex items-center gap-2 mt-5">
               <input type="checkbox" id="graduado" checked={graduado}
@@ -556,14 +565,22 @@ function ExperienciaSection({ empleadoId, soloLectura, fechaNacimiento }) {
               <input type="text" value={cargo} onChange={(e) => setCargo(e.target.value)} className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Fecha inicio *</label>
-              <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)}
-                min={fechaNacimiento || undefined} className={inputClass} />
+              <CalendarioInput
+                label="Fecha inicio *"
+                value={fechaInicio}
+                onChange={setFechaInicio}
+                min={fechaNacimiento || undefined}
+                diasNoLaborales={[]}
+              />
             </div>
             <div>
-              <label className={labelClass}>Fecha fin</label>
-              <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)}
-                min={fechaInicio || undefined} className={inputClass} />
+              <CalendarioInput
+                label="Fecha fin"
+                value={fechaFin}
+                onChange={setFechaFin}
+                min={fechaInicio || undefined}
+                diasNoLaborales={[]}
+              />
             </div>
             <div className="col-span-2 md:col-span-3">
               <label className={labelClass}>Descripción</label>
@@ -613,7 +630,7 @@ function ExperienciaSection({ empleadoId, soloLectura, fechaNacimiento }) {
                 }`}
               >
                 {!soloLectura && (
-                  <td className="px-2 py-3 cursor-grab text-gray-300 dark:text-gray-600 select-none" title="Arrastra para reordenar">
+                  <td className="px-2 py-3 text-gray-300 select-none cursor-grab dark:text-gray-600" title="Arrastra para reordenar">
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
                       <rect y="2.5" width="16" height="1.5" rx="0.75" />
                       <rect y="7" width="16" height="1.5" rx="0.75" />
@@ -722,7 +739,7 @@ async function generarPDFEmpleado(empleado, apiBase) {
   campo("Celular:", empleado.celular || "—", col2, y);
   y += 6;
   campo("Cargo:", empleado.cargo_nombre || "—", col1, y);
-  campo("Empresa:", empleado.empresa_nombre || "—", col2, y);
+  campo("Sede:", empleado.empresa_nombre || "—", col2, y);
   y += 6;
   campo("Contrato:", empleado.tipo_contrato_nombre || "—", col1, y);
   campo("Salario:", formatSalario(empleado.salario), col2, y);
@@ -970,6 +987,13 @@ function EmpleadoDetallePage() {
   const soloLecturaSeccion = soloLectura || esRolEmpleado;
   const fechaNacimiento = empleado.fecha_nacimiento?.split("T")[0] || "";
 
+  const esHoyCumple = (() => {
+    if (!empleado.fecha_nacimiento) return false;
+    const [, m, d] = String(empleado.fecha_nacimiento).split("T")[0].split("-");
+    const hoy = new Date();
+    return hoy.getMonth() + 1 === Number(m) && hoy.getDate() === Number(d);
+  })();
+
   return (
     <div>
       {!esRolEmpleado && (
@@ -990,18 +1014,49 @@ function EmpleadoDetallePage() {
         </div>
       )}
 
-      <div className="p-6 mb-8 bg-white rounded-lg shadow-md dark:bg-gray-800">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+      {esHoyCumple && (
+        <div className="relative p-6 mb-6 overflow-hidden shadow-lg rounded-xl bg-gradient-to-r from-amber-400 via-orange-400 to-pink-500">
+          {/* Círculos decorativos de fondo */}
+          <div className="absolute w-40 h-40 rounded-full pointer-events-none -top-8 -right-8 bg-white/10" />
+          <div className="absolute rounded-full pointer-events-none -bottom-6 -left-6 w-28 h-28 bg-white/10" />
+          <div className="absolute w-16 h-16 rounded-full pointer-events-none top-2 right-32 bg-white/10" />
+
+          {/* Confeti decorativo */}
+          <span className="absolute top-4 right-16 w-2.5 h-2.5 rounded-full bg-yellow-200 opacity-80" />
+          <span className="absolute w-3 h-3 bg-pink-200 rounded-full top-10 right-10 opacity-70" />
+          <span className="absolute w-2 h-2 rounded-full bottom-5 right-24 bg-white/60" />
+          <span className="absolute w-2 h-2 bg-yellow-100 rounded-full bottom-3 left-1/3 opacity-60" />
+          <span className="absolute top-3 left-1/2 w-2.5 h-2.5 rounded-full bg-pink-100 opacity-50" />
+
+          <div className="relative flex items-center gap-5">
+            <div className="flex-shrink-0 text-6xl select-none" aria-hidden="true">🎂</div>
+            <div>
+              <p className="text-xs font-semibold tracking-widest uppercase text-white/80 mb-0.5">
+                ¡Hoy es un día especial!
+              </p>
+              <h2 className="text-2xl font-bold leading-tight text-white">
+                ¡Feliz cumpleaños, {empleado.nombre}!
+              </h2>
+              <p className="mt-1.5 text-sm text-white/90">
+                Todo el equipo te desea un día increíble. ¡Gracias por ser parte de la familia!
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="p-4 mb-6 bg-white rounded-lg shadow-md sm:p-6 md:mb-8 dark:bg-gray-800">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold leading-tight text-gray-900 sm:text-2xl dark:text-white">
               {empleado.nombre} {empleado.apellido}
             </h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-xs text-gray-500 break-all sm:text-sm dark:text-gray-400">
               Doc: {empleado.documento} · {empleado.correo} · {formatCelular(empleado.celular)}
             </p>
           </div>
           <span
-            className={`px-3 py-1 text-xs font-semibold rounded-full text-white ${
+            className={`flex-shrink-0 px-3 py-1 text-xs font-semibold rounded-full text-white ${
               empleado.estado_empleado_nombre === "Activo" ? "bg-green-500" :
               empleado.estado_empleado_nombre === "Licencia" ? "bg-yellow-500" :
               empleado.estado_empleado_nombre === "Vacaciones" ? "bg-blue-500" :
@@ -1011,7 +1066,7 @@ function EmpleadoDetallePage() {
             {empleado.estado_empleado_nombre}
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-4 mt-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-2 md:grid-cols-4">
           <div>
             <p className={labelClass}>Cargo actual</p>
             <p className="mt-1 text-sm font-medium text-gray-800 dark:text-white">{empleado.cargo_nombre || "—"}</p>
@@ -1027,7 +1082,7 @@ function EmpleadoDetallePage() {
             </p>
           </div>
           <div>
-            <p className={labelClass}>Empresa</p>
+            <p className={labelClass}>Sede</p>
             <p className="mt-1 text-sm font-medium text-gray-800 dark:text-white">{empleado.empresa_nombre || "—"}</p>
           </div>
           <div>
@@ -1111,13 +1166,13 @@ function EmpleadoDetallePage() {
       )}
 
       <div className="bg-white rounded-lg shadow-md dark:bg-gray-800">
-        <div className="flex items-center justify-between border-b dark:border-gray-700">
-          <div className="flex">
+        <div className="flex flex-col border-b sm:flex-row sm:items-center sm:justify-between dark:border-gray-700">
+          <div className="flex overflow-x-auto scrollbar-none">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setTabActivo(tab.key)}
-                className={`px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
+                className={`flex-shrink-0 px-4 sm:px-6 py-3 text-xs sm:text-sm font-medium transition-colors border-b-2 ${
                   tabActivo === tab.key
                     ? "border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
                     : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
@@ -1131,7 +1186,7 @@ function EmpleadoDetallePage() {
           <button
             onClick={handleExportarPDF}
             disabled={generandoPDF}
-            className="flex items-center gap-2 mr-4 px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 mx-3 mb-3 sm:mb-0 sm:mr-4 px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors self-start sm:self-auto"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
@@ -1140,7 +1195,7 @@ function EmpleadoDetallePage() {
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {tabActivo === "historial" && (
             <HistorialSection
               empleadoId={id}
