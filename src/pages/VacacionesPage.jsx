@@ -368,7 +368,7 @@ export default function VacacionesPage() {
       {!esGestor && mostrarForm && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
           <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Nueva solicitud</h2>
-          <form onSubmit={handleCrear} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <form onSubmit={handleCrear} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <CalendarioInput
                 label="Fecha de inicio"
@@ -391,7 +391,7 @@ export default function VacacionesPage() {
                 placeholder="Seleccionar fecha"
               />
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Observaciones</label>
               <textarea
                 rows={2}
@@ -404,7 +404,7 @@ export default function VacacionesPage() {
 
             {/* Contador de días hábiles */}
             {diasHabilesForm !== null && (
-              <div className="sm:col-span-3">
+              <div className="sm:col-span-2">
                 <p className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">
                   <svg className="w-4 h-4 inline mr-1 -mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75" />
@@ -416,9 +416,9 @@ export default function VacacionesPage() {
             )}
 
             {errorForm && (
-              <p className="sm:col-span-3 text-sm text-red-600 dark:text-red-400">{errorForm}</p>
+              <p className="sm:col-span-2 text-sm text-red-600 dark:text-red-400">{errorForm}</p>
             )}
-            <div className="sm:col-span-3 flex justify-end gap-2">
+            <div className="sm:col-span-2 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => { setMostrarForm(false); setErrorForm(""); }}
