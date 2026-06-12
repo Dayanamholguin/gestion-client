@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import API_BASE from "../config/api";
 import CalendarioInput from "../components/CalendarioInput";
+import useTour from "../Hooks/useTour";
+import TourGuide from "../components/TourGuide";
+import { STEPS_AUDITORIA } from "../utils/tourSteps";
+import useSort, { SortIcon } from "../Hooks/useSort";
+import usePagination from "../Hooks/usePagination";
+import Pagination from "../components/Pagination";
 
 const TABLAS = [
   "tb_empleados", "tb_usuarios", "tb_historial_cargos",
@@ -264,6 +270,8 @@ function FilaAuditoria({ reg }) {
 }
 
 function AuditoriaPage() {
+  const { run: tourRun, handleFinish: tourFinish, restart: tourRestart } = useTour("auditoria");
+
   const [registros,  setRegistros]  = useState([]);
   const [usuarios,   setUsuarios]   = useState([]);
   const [cargando,   setCargando]   = useState(false);
@@ -309,6 +317,9 @@ function AuditoriaPage() {
     setBuscado(false);
   };
 
+  const { sortedItems, sortConfig, handleSort } = useSort(registros, "created_at", "desc");
+  const { paginatedItems, page, setPage, pageSize, setPageSize, totalItems } = usePagination(sortedItems);
+
   const inputClass =
     "px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg " +
     "bg-white dark:bg-gray-700 text-gray-900 dark:text-white " +
@@ -316,16 +327,23 @@ function AuditoriaPage() {
 
   return (
     <div>
+      <TourGuide run={tourRun} steps={STEPS_AUDITORIA} onFinish={tourFinish} />
+
       {/* Encabezado */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Auditoría</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Auditoría</h1>
+          <button onClick={tourRestart} title="Ver tour del módulo" className="p-1 rounded-full text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+          </button>
+        </div>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
           Historial de cambios en el sistema (últimas 500 operaciones por búsqueda)
         </p>
       </div>
 
       {/* Filtros */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 mb-6">
+      <div data-tour="auditoria-filtros" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 mb-6">
         <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Filtros</p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {/* Tabla */}
@@ -402,7 +420,7 @@ function AuditoriaPage() {
 
       {/* Resultados */}
       {buscado && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+        <div data-tour="auditoria-tabla" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
           {cargando ? (
             <div className="py-16 text-center text-gray-400">Cargando...</div>
           ) : registros.length === 0 ? (
@@ -420,21 +438,31 @@ function AuditoriaPage() {
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gray-50 dark:bg-gray-900/40">
                     <tr>
-                      {["Fecha / Hora", "Módulo", "Acción", "ID", "Usuario", "IP", ""].map((h) => (
-                        <th key={h}
-                          className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                          {h}
-                        </th>
-                      ))}
+                      <th onClick={() => handleSort("created_at")} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                        Fecha / Hora <SortIcon field="created_at" sortConfig={sortConfig} />
+                      </th>
+                      <th onClick={() => handleSort("tabla")} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                        Módulo <SortIcon field="tabla" sortConfig={sortConfig} />
+                      </th>
+                      <th onClick={() => handleSort("accion")} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                        Acción <SortIcon field="accion" sortConfig={sortConfig} />
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">ID</th>
+                      <th onClick={() => handleSort("usuario_nombre")} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                        Usuario <SortIcon field="usuario_nombre" sortConfig={sortConfig} />
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">IP</th>
+                      <th className="px-4 py-3"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
-                    {registros.map((r) => (
+                    {paginatedItems.map((r) => (
                       <FilaAuditoria key={r.id} reg={r} />
                     ))}
                   </tbody>
                 </table>
               </div>
+              <Pagination page={page} pageSize={pageSize} total={totalItems} onPageChange={setPage} onPageSizeChange={setPageSize} />
             </>
           )}
         </div>

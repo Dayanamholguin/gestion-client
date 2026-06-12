@@ -2,6 +2,12 @@ import { useState, useEffect, useMemo } from "react";
 import Swal from "sweetalert2";
 import API_BASE from "../config/api";
 import { useAuth } from "../contexts/AuthContext";
+import useTour from "../Hooks/useTour";
+import TourGuide from "../components/TourGuide";
+import { STEPS_USUARIOS } from "../utils/tourSteps";
+import useSort, { SortIcon } from "../Hooks/useSort";
+import usePagination from "../Hooks/usePagination";
+import Pagination from "../components/Pagination";
 
 // Solo estos roles se pueden asignar manualmente.
 // EMPLEADO se crea automáticamente al registrar un empleado en Gestión Empleados.
@@ -32,6 +38,7 @@ function formatFecha(iso) {
 
 function UsuariosPage() {
   const { usuario } = useAuth();
+  const { run: tourRun, handleFinish: tourFinish, restart: tourRestart } = useTour("usuarios");
 
   const [usuarios,  setUsuarios]  = useState([]);
   const [empleados, setEmpleados] = useState([]);
@@ -53,6 +60,10 @@ function UsuariosPage() {
       return coincideTexto && coincideRol && coincideEstado;
     });
   }, [usuarios, filtroTexto, filtroRol, filtroEstado]);
+
+  const { sortedItems, sortConfig, handleSort } = useSort(usuariosFiltrados, "apellido");
+  const { paginatedItems, page, setPage, pageSize, setPageSize, totalItems } = usePagination(sortedItems);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editandoId,  setEditandoId]  = useState(null);
   const [rolEditando, setRolEditando] = useState(null); // rol del usuario que se está editando
@@ -205,13 +216,21 @@ function UsuariosPage() {
 
   return (
     <div>
+      <TourGuide run={tourRun} steps={STEPS_USUARIOS} onFinish={tourFinish} />
+
       {/* Encabezado */}
       <div className="flex items-center justify-between gap-3 mb-4 md:mb-6 flex-wrap">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">Gestión de Usuarios</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">Gestión de Usuarios</h1>
+            <button onClick={tourRestart} title="Ver tour del módulo" className="p-1 rounded-full text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+            </button>
+          </div>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">Administra los accesos al sistema</p>
         </div>
         <button
+          data-tour="usuarios-nuevo"
           onClick={abrirCrear}
           className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
         >
@@ -224,7 +243,7 @@ function UsuariosPage() {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-wrap gap-3 mb-4">
+      <div data-tour="usuarios-filtros" className="flex flex-wrap gap-3 mb-4">
         <div className="relative flex-1 min-w-48">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
@@ -267,7 +286,7 @@ function UsuariosPage() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+      <div data-tour="usuarios-tabla" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
         {cargando ? (
           <div className="py-16 text-center text-gray-400 dark:text-gray-500">Cargando...</div>
         ) : usuariosFiltrados.length === 0 ? (
@@ -275,19 +294,34 @@ function UsuariosPage() {
             {usuarios.length === 0 ? "No hay usuarios registrados" : "Sin resultados para los filtros aplicados"}
           </div>
         ) : (
+          <>
           <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900/40">
               <tr>
-                {["Usuario", "Correo", "Rol", "Empleado vinculado", "Último acceso", "Estado", ""].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                    {h}
-                  </th>
-                ))}
+                <th onClick={() => handleSort("apellido")} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                  Usuario <SortIcon field="apellido" sortConfig={sortConfig} />
+                </th>
+                <th onClick={() => handleSort("correo")} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                  Correo <SortIcon field="correo" sortConfig={sortConfig} />
+                </th>
+                <th onClick={() => handleSort("rol")} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                  Rol <SortIcon field="rol" sortConfig={sortConfig} />
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Empleado vinculado
+                </th>
+                <th onClick={() => handleSort("ultimo_acceso")} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                  Último acceso <SortIcon field="ultimo_acceso" sortConfig={sortConfig} />
+                </th>
+                <th onClick={() => handleSort("activo")} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                  Estado <SortIcon field="activo" sortConfig={sortConfig} />
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {usuariosFiltrados.map((u) => (
+              {paginatedItems.map((u) => (
                 <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                   {/* Nombre */}
                   <td className="px-5 py-3">
@@ -373,6 +407,8 @@ function UsuariosPage() {
             </tbody>
           </table>
           </div>
+          <Pagination page={page} pageSize={pageSize} total={totalItems} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </>
         )}
       </div>
 

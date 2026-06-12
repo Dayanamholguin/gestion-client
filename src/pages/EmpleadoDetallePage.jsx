@@ -51,6 +51,7 @@ const formatCelular = (c) => {
 
 function HistorialSection({ empleadoId, soloLectura }) {
   const [registros, setRegistros] = useState([]);
+  const [vista,    setVista]    = useState("tabla");
   const [dragIdx,  setDragIdx]  = useState(null);
   const [dragOver, setDragOver] = useState(null);
 
@@ -84,62 +85,187 @@ function HistorialSection({ empleadoId, soloLectura }) {
   const colSpan = soloLectura ? 6 : 7;
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm divide-y divide-gray-200 dark:divide-gray-700">
-        <thead className="bg-gray-50 dark:bg-gray-700">
-          <tr>
-            {!soloLectura && <th className="w-6 px-2 py-2" />}
-            {["Cargo", "Contrato", "Salario", "Inicio", "Fin", "Motivo"].map((h) => (
-              <th key={h} className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase dark:text-gray-300">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+    <div>
+      {/* Selector de vista */}
+      <div className="flex justify-end mb-3">
+        <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 text-xs">
+          <button
+            onClick={() => setVista("tabla")}
+            title="Vista tabla"
+            className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors ${
+              vista === "tabla"
+                ? "bg-indigo-600 text-white"
+                : "bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="18" height="18" rx="2" strokeLinejoin="round" />
+              <path strokeLinecap="round" d="M3 9h18M3 15h18M9 9v12M15 9v12" />
+            </svg>
+            Tabla
+          </button>
+          <button
+            onClick={() => setVista("timeline")}
+            title="Vista timeline"
+            className={`flex items-center gap-1.5 px-3 py-1.5 border-l border-gray-200 dark:border-gray-600 transition-colors ${
+              vista === "timeline"
+                ? "bg-indigo-600 text-white"
+                : "bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="8" cy="6"  r="2" />
+              <circle cx="8" cy="12" r="2" />
+              <circle cx="8" cy="18" r="2" />
+              <path strokeLinecap="round" d="M8 8v2M8 14v2M12 6h6M12 12h6M12 18h6" />
+            </svg>
+            Timeline
+          </button>
+        </div>
+      </div>
+
+      {/* Vista tabla */}
+      {vista === "tabla" && (
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                {!soloLectura && <th className="w-6 px-2 py-2" />}
+                {["Cargo", "Contrato", "Salario", "Inicio", "Fin", "Motivo"].map((h) => (
+                  <th key={h} className="px-4 py-2 text-xs font-medium text-left text-gray-500 uppercase dark:text-gray-300">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {registros.length === 0 ? (
+                <tr><td colSpan={colSpan} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Sin registros de historial</td></tr>
+              ) : registros.map((r, i) => (
+                <tr
+                  key={r.id}
+                  draggable={!soloLectura}
+                  onDragStart={() => onDragStart(i)}
+                  onDragOver={(e) => onDragOver(e, i)}
+                  onDrop={(e) => onDrop(e, i)}
+                  onDragEnd={onDragEnd}
+                  className={`transition-colors ${
+                    dragOver === i && dragIdx !== i
+                      ? "bg-indigo-50 dark:bg-indigo-900/20"
+                      : dragIdx === i
+                        ? "opacity-40 bg-gray-100 dark:bg-gray-600"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  {!soloLectura && (
+                    <td className="px-2 py-3 text-gray-300 select-none cursor-grab dark:text-gray-600" title="Arrastra para reordenar">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
+                        <rect y="2.5" width="16" height="1.5" rx="0.75" />
+                        <rect y="7" width="16" height="1.5" rx="0.75" />
+                        <rect y="11.5" width="16" height="1.5" rx="0.75" />
+                      </svg>
+                    </td>
+                  )}
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{r.cargo_nombre}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{r.tipo_contrato_nombre}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300">${new Intl.NumberFormat("es-CO").format(r.salario)}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{formatFecha(r.fecha_inicio)}</td>
+                  <td className="px-4 py-3">
+                    {r.fecha_fin
+                      ? <span className="text-gray-600 dark:text-gray-300">{formatFecha(r.fecha_fin)}</span>
+                      : <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                          Actual
+                        </span>
+                    }
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{r.motivo || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Vista timeline */}
+      {vista === "timeline" && (
+        <div className="relative py-2 px-1">
+          {/* Línea vertical continua */}
+          <div className="absolute left-[19px] top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />
+
           {registros.length === 0 ? (
-            <tr><td colSpan={colSpan} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Sin registros de historial</td></tr>
-          ) : registros.map((r, i) => (
-            <tr
-              key={r.id}
-              draggable={!soloLectura}
-              onDragStart={() => onDragStart(i)}
-              onDragOver={(e) => onDragOver(e, i)}
-              onDrop={(e) => onDrop(e, i)}
-              onDragEnd={onDragEnd}
-              className={`transition-colors ${
-                dragOver === i && dragIdx !== i
-                  ? "bg-indigo-50 dark:bg-indigo-900/20"
-                  : dragIdx === i
-                    ? "opacity-40 bg-gray-100 dark:bg-gray-600"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-700"
-              }`}
-            >
-              {!soloLectura && (
-                <td className="px-2 py-3 text-gray-300 select-none cursor-grab dark:text-gray-600" title="Arrastra para reordenar">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
-                    <rect y="2.5" width="16" height="1.5" rx="0.75" />
-                    <rect y="7" width="16" height="1.5" rx="0.75" />
-                    <rect y="11.5" width="16" height="1.5" rx="0.75" />
-                  </svg>
-                </td>
-              )}
-              <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{r.cargo_nombre}</td>
-              <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{r.tipo_contrato_nombre}</td>
-              <td className="px-4 py-3 text-gray-600 dark:text-gray-300">${new Intl.NumberFormat("es-CO").format(r.salario)}</td>
-              <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{formatFecha(r.fecha_inicio)}</td>
-              <td className="px-4 py-3">
-                {r.fecha_fin
-                  ? <span className="text-gray-600 dark:text-gray-300">{formatFecha(r.fecha_fin)}</span>
-                  : <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-                      Actual
-                    </span>
-                }
-              </td>
-              <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{r.motivo || "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            <p className="pl-12 py-8 text-center text-gray-500 dark:text-gray-400">Sin registros de historial</p>
+          ) : (
+            <div className="space-y-4">
+              {registros.map((r) => {
+                const esActual = !r.fecha_fin;
+                return (
+                  <div key={r.id} className="relative flex gap-4">
+                    {/* Nodo en la línea */}
+                    <div className="flex-shrink-0 w-10 flex justify-center pt-3.5 z-10">
+                      <div className={`w-4 h-4 rounded-full border-2 border-white dark:border-gray-800 shadow ${
+                        esActual
+                          ? "bg-green-500 ring-2 ring-green-200 dark:ring-green-800"
+                          : "bg-indigo-400 dark:bg-indigo-500"
+                      }`} />
+                    </div>
+                    {/* Tarjeta */}
+                    <div className="flex-1 pb-1">
+                      <div className={`p-4 rounded-xl border shadow-sm ${
+                        esActual
+                          ? "border-green-200 bg-green-50/60 dark:border-green-800/40 dark:bg-green-900/10"
+                          : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/60"
+                      }`}>
+                        {/* Cabecera de la tarjeta */}
+                        <div className="flex items-start justify-between gap-2 flex-wrap">
+                          <div>
+                            <p className="font-semibold text-sm text-gray-900 dark:text-white">{r.cargo_nombre}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              {formatFecha(r.fecha_inicio)}
+                              <span className="mx-1 text-gray-300 dark:text-gray-600">→</span>
+                              {r.fecha_fin
+                                ? formatFecha(r.fecha_fin)
+                                : <span className="text-green-600 dark:text-green-400 font-medium">Presente</span>
+                              }
+                            </p>
+                          </div>
+                          {esActual && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 flex-shrink-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                              Actual
+                            </span>
+                          )}
+                        </div>
+                        {/* Detalles */}
+                        <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            {r.tipo_contrato_nombre}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            ${new Intl.NumberFormat("es-CO").format(r.salario)}
+                          </span>
+                          {r.motivo && (
+                            <span className="flex items-center gap-1 italic">
+                              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+                              </svg>
+                              {r.motivo}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

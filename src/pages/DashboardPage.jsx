@@ -4,6 +4,9 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { useAuth } from "../contexts/AuthContext";
 import API_BASE from "../config/api";
+import useTour from "../Hooks/useTour";
+import TourGuide from "../components/TourGuide";
+import { STEPS_DASHBOARD } from "../utils/tourSteps";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const MESES_ES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
@@ -694,6 +697,7 @@ function exportarExcel(stats) {
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { usuario } = useAuth();
+  const { run: tourRun, handleFinish: tourFinish, restart: tourRestart } = useTour("dashboard");
   const [stats, setStats]         = useState(null);
   const [cargando, setCargando]   = useState(true);
   const [error, setError]         = useState("");
@@ -766,6 +770,8 @@ export default function DashboardPage() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div>
+      <TourGuide run={tourRun} steps={STEPS_DASHBOARD} onFinish={tourFinish} />
+
       {/* Panel de configuración */}
       {configOpen && (
         <PanelConfig
@@ -776,7 +782,7 @@ export default function DashboardPage() {
       )}
 
       {/* Encabezado */}
-      <div className="flex items-start justify-between mb-4 md:mb-6 flex-wrap gap-3">
+      <div data-tour="dashboard-header" className="flex items-start justify-between mb-4 md:mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">Dashboard</h1>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -819,6 +825,7 @@ export default function DashboardPage() {
 
           {/* Personalizar */}
           <button
+            data-tour="dashboard-config"
             onClick={() => setConfigOpen(true)}
             title="Personalizar tablero"
             className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -855,6 +862,15 @@ export default function DashboardPage() {
             </svg>
             <span className="hidden sm:inline">PDF</span>
           </button>
+
+          {/* Reiniciar tour */}
+          <button
+            onClick={tourRestart}
+            title="Ver guía de este módulo"
+            className="flex items-center justify-center w-8 h-8 rounded-full border border-indigo-200 dark:border-indigo-700 text-indigo-400 dark:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors text-sm font-bold flex-shrink-0"
+          >
+            ?
+          </button>
         </div>
       </div>
 
@@ -877,7 +893,7 @@ export default function DashboardPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div data-tour="dashboard-widgets" className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {config.widgets.map((id) => {
             const def = WIDGET_MAP[id];
             if (!def) return null;

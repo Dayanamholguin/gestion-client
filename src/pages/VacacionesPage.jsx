@@ -4,6 +4,12 @@ import { useAuth } from "../contexts/AuthContext";
 import API_BASE from "../config/api";
 import CalendarioInput from "../components/CalendarioInput";
 import { getFestivos, contarDiasHabiles } from "../utils/festivos";
+import useTour from "../Hooks/useTour";
+import TourGuide from "../components/TourGuide";
+import { STEPS_VACACIONES_GESTOR, STEPS_VACACIONES_EMPLEADO } from "../utils/tourSteps";
+import useSort, { SortIcon } from "../Hooks/useSort";
+import usePagination from "../Hooks/usePagination";
+import Pagination from "../components/Pagination";
 
 // ── Helpers de fecha ──────────────────────────────────────────────────────────
 const parseDate = (s) => {
@@ -142,6 +148,10 @@ export default function VacacionesPage() {
   const esGestor = tienePermiso("vacaciones:gestionar") || usuario?.rol === "ADMIN" || usuario?.rol === "RRHH";
   const esAdmin  = usuario?.rol === "ADMIN" || tienePermiso("*");
 
+  const tourId = esGestor ? "vacaciones-gestor" : "vacaciones-empleado";
+  const tourSteps = esGestor ? STEPS_VACACIONES_GESTOR : STEPS_VACACIONES_EMPLEADO;
+  const { run: tourRun, handleFinish: tourFinish, restart: tourRestart } = useTour(tourId);
+
   const [vacaciones, setVacaciones]   = useState([]);
   const [cargando, setCargando]       = useState(true);
   const [filtroEstado, setFiltroEstado] = useState("");
@@ -193,6 +203,9 @@ export default function VacacionesPage() {
         v.empleado_nombre?.toLowerCase().includes(busqueda.toLowerCase())
       )
     : vacaciones;
+
+  const { sortedItems, sortConfig, handleSort } = useSort(registrosFiltrados, "fecha_inicio", "desc");
+  const { paginatedItems, page, setPage, pageSize, setPageSize, totalItems } = usePagination(sortedItems);
 
   // Días hábiles del formulario
   const diasHabilesForm = calcularDiasHabiles(form.fecha_inicio, form.fecha_fin, configLaboral);
@@ -316,6 +329,8 @@ export default function VacacionesPage() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div>
+      <TourGuide run={tourRun} steps={tourSteps} onFinish={tourFinish} />
+
       {/* Modal de configuración */}
       {modalConfig && configLaboral && (
         <ModalConfigLaboral
@@ -327,19 +342,29 @@ export default function VacacionesPage() {
 
       {/* Encabezado */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-            {esGestor ? "Solicitudes de Vacaciones" : "Mis Vacaciones"}
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            {esGestor
-              ? "Revisa, aprueba o rechaza las solicitudes de los empleados"
-              : "Consulta el estado de tus solicitudes o crea una nueva"}
-          </p>
+        <div className="flex items-center gap-2">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+              {esGestor ? "Solicitudes de Vacaciones" : "Mis Vacaciones"}
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              {esGestor
+                ? "Revisa, aprueba o rechaza las solicitudes de los empleados"
+                : "Consulta el estado de tus solicitudes o crea una nueva"}
+            </p>
+          </div>
+          <button
+            onClick={tourRestart}
+            title="Ver guía de este módulo"
+            className="flex items-center justify-center w-7 h-7 rounded-full border border-indigo-200 dark:border-indigo-700 text-indigo-400 dark:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors text-sm font-bold flex-shrink-0 self-start mt-0.5"
+          >
+            ?
+          </button>
         </div>
         <div className="flex items-center gap-2">
           {esAdmin && configLaboral && (
             <button
+              data-tour="vacaciones-config"
               onClick={() => setModalConfig(true)}
               className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
@@ -352,6 +377,7 @@ export default function VacacionesPage() {
           )}
           {!esGestor && (
             <button
+              data-tour="vacaciones-solicitar"
               onClick={() => { setMostrarForm((v) => !v); setErrorForm(""); }}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
@@ -439,7 +465,7 @@ export default function VacacionesPage() {
       )}
 
       {/* Filtros */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-4 flex flex-wrap gap-3 items-center">
+      <div data-tour="vacaciones-filtros" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-4 flex flex-wrap gap-3 items-center">
         {esGestor && (
           <input
             type="text"
@@ -473,7 +499,7 @@ export default function VacacionesPage() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div data-tour="vacaciones-tabla" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         {cargando ? (
           <div className="flex items-center justify-center py-16 text-gray-400 dark:text-gray-500 text-sm">
             Cargando solicitudes...
@@ -490,26 +516,27 @@ export default function VacacionesPage() {
             )}
           </div>
         ) : (
+          <>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                   {esGestor && (
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wide">
-                      Empleado
+                    <th onClick={() => handleSort("empleado_nombre")} className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wide cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                      Empleado <SortIcon field="empleado_nombre" sortConfig={sortConfig} />
                     </th>
                   )}
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wide">
-                    Fecha inicio
+                  <th onClick={() => handleSort("fecha_inicio")} className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wide cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                    Fecha inicio <SortIcon field="fecha_inicio" sortConfig={sortConfig} />
                   </th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wide">
-                    Fecha fin
+                  <th onClick={() => handleSort("fecha_fin")} className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wide cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                    Fecha fin <SortIcon field="fecha_fin" sortConfig={sortConfig} />
                   </th>
                   <th className="text-center px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wide">
                     Días hábiles
                   </th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wide">
-                    Estado
+                  <th onClick={() => handleSort("estado")} className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wide cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                    Estado <SortIcon field="estado" sortConfig={sortConfig} />
                   </th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wide">
                     Observaciones
@@ -530,7 +557,7 @@ export default function VacacionesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {registrosFiltrados.map((v) => {
+                {paginatedItems.map((v) => {
                   const dias = calcularDiasHabiles(v.fecha_inicio, v.fecha_fin, configLaboral);
                   return (
                     <tr key={v.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
@@ -612,6 +639,8 @@ export default function VacacionesPage() {
               </tbody>
             </table>
           </div>
+          <Pagination page={page} pageSize={pageSize} total={totalItems} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </>
         )}
       </div>
     </div>

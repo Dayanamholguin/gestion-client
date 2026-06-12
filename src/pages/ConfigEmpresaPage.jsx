@@ -5,8 +5,16 @@ import API_BASE from "../config/api";
 import { DEPARTAMENTOS, CIUDADES } from "../utils/colombiaData";
 import { ThemeContext } from "../App";
 import { getSelectStyles } from "../config/selectStyles";
+import useTour from "../Hooks/useTour";
+import TourGuide from "../components/TourGuide";
+import { STEPS_CONFIGURACION } from "../utils/tourSteps";
+import useSort, { SortIcon } from "../Hooks/useSort";
+import usePagination from "../Hooks/usePagination";
+import Pagination from "../components/Pagination";
 
 export default function ConfigEmpresaPage() {
+  const { run: tourRun, handleFinish: tourFinish, restart: tourRestart } = useTour("configuracion");
+
   const [empresa, setEmpresa] = useState({ nombre: "", nit: "" });
   const [sedes, setSedes]     = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -19,6 +27,9 @@ export default function ConfigEmpresaPage() {
 
   const darkMode = useContext(ThemeContext);
   const selectStyles = getSelectStyles(darkMode);
+
+  const { sortedItems: sortedSedes, sortConfig: sedesSortConfig, handleSort: sedesHandleSort } = useSort(sedes, "nombre");
+  const { paginatedItems: pagedSedes, page: sedesPage, setPage: setSedesPage, pageSize: sedesPageSize, setPageSize: setSedesPageSize, totalItems: sedesTotalItems } = usePagination(sortedSedes);
 
   const deptoOptions = DEPARTAMENTOS.map((d) => ({ value: d, label: d }));
   const ciudadOptions = formSede.departamento
@@ -153,15 +164,22 @@ export default function ConfigEmpresaPage() {
 
   return (
     <div className="space-y-8">
+      <TourGuide run={tourRun} steps={STEPS_CONFIGURACION} onFinish={tourFinish} />
+
       <div>
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Configuración de la empresa</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Configuración de la empresa</h1>
+          <button onClick={tourRestart} title="Ver tour del módulo" className="p-1 rounded-full text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+          </button>
+        </div>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Administra el nombre de tu empresa y sus sedes. Las sedes aparecen en el formulario de empleados.
         </p>
       </div>
 
       {/* ── Datos generales ── */}
-      <section className="p-6 bg-white shadow dark:bg-gray-800 rounded-2xl">
+      <section data-tour="config-empresa" className="p-6 bg-white shadow dark:bg-gray-800 rounded-2xl">
         <h2 className="mb-4 text-base font-semibold text-gray-700 dark:text-gray-200">Datos generales</h2>
         <form onSubmit={guardarEmpresa} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -198,7 +216,7 @@ export default function ConfigEmpresaPage() {
       </section>
 
       {/* ── Sedes ── */}
-      <section className="p-6 bg-white shadow dark:bg-gray-800 rounded-2xl">
+      <section data-tour="config-sedes" className="p-6 bg-white shadow dark:bg-gray-800 rounded-2xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200">Sedes</h2>
           {editandoId === null && (
@@ -301,20 +319,29 @@ export default function ConfigEmpresaPage() {
         {sedes.length === 0 ? (
           <p className="py-6 text-sm text-center text-gray-400">No hay sedes registradas</p>
         ) : (
+          <>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs font-semibold tracking-wide text-left text-gray-500 uppercase border-b border-gray-200 dark:text-gray-400 dark:border-gray-700">
-                  <th className="pb-2 pr-4">Nombre</th>
-                  <th className="pb-2 pr-4">Departamento</th>
-                  <th className="pb-2 pr-4">Ciudad</th>
+                  <th onClick={() => sedesHandleSort("nombre")} className="pb-2 pr-4 cursor-pointer select-none hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    Nombre <SortIcon field="nombre" sortConfig={sedesSortConfig} />
+                  </th>
+                  <th onClick={() => sedesHandleSort("departamento")} className="pb-2 pr-4 cursor-pointer select-none hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    Departamento <SortIcon field="departamento" sortConfig={sedesSortConfig} />
+                  </th>
+                  <th onClick={() => sedesHandleSort("ciudad")} className="pb-2 pr-4 cursor-pointer select-none hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    Ciudad <SortIcon field="ciudad" sortConfig={sedesSortConfig} />
+                  </th>
                   <th className="pb-2 pr-4">Dirección</th>
-                  <th className="pb-2 text-center">Estado</th>
+                  <th onClick={() => sedesHandleSort("activo")} className="pb-2 text-center cursor-pointer select-none hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    Estado <SortIcon field="activo" sortConfig={sedesSortConfig} />
+                  </th>
                   <th className="pb-2" />
                 </tr>
               </thead>
               <tbody>
-                {sedes.map((s) => (
+                {pagedSedes.map((s) => (
                   <tr key={s.id} className={`border-b border-gray-100 dark:border-gray-700 ${!s.activo ? "opacity-50" : ""}`}>
                     <td className="py-3 pr-4 font-medium text-gray-800 dark:text-gray-100">{s.nombre}</td>
                     <td className="py-3 pr-4 text-gray-600 dark:text-gray-300">{s.departamento || "—"}</td>
@@ -361,6 +388,8 @@ export default function ConfigEmpresaPage() {
               </tbody>
             </table>
           </div>
+          <Pagination page={sedesPage} pageSize={sedesPageSize} total={sedesTotalItems} onPageChange={setSedesPage} onPageSizeChange={setSedesPageSize} />
+          </>
         )}
       </section>
     </div>

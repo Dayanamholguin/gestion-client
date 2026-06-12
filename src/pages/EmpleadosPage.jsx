@@ -8,10 +8,14 @@ import { validarEmpleado } from "../validations/empleadoValidation";
 import GestionForm from "../components/GestionForm";
 import GestionTable from "../components/GestionTable";
 import API_BASE from "../config/api";
+import useTour from "../Hooks/useTour";
+import TourGuide from "../components/TourGuide";
+import { STEPS_EMPLEADOS } from "../utils/tourSteps";
 
 function EmpleadosPage() {
   const navigate = useNavigate();
   const { usuario, tienePermiso } = useAuth();
+  const { run: tourRun, handleFinish: tourFinish, restart: tourRestart } = useTour("empleados");
 
   // EMPLEADO solo puede ver su propio perfil
   useEffect(() => {
@@ -466,16 +470,27 @@ function EmpleadosPage() {
 
   return (
     <div>
+      <TourGuide run={tourRun} steps={STEPS_EMPLEADOS} onFinish={tourFinish} />
+
       <header className="mb-4 md:mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Gestión de Empleados</h1>
-          <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">
-            Administra la información de tu personal de forma eficiente.
-          </p>
+        <div className="flex items-center gap-2">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Gestión de Empleados</h1>
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">
+              Administra la información de tu personal de forma eficiente.
+            </p>
+          </div>
+          <button
+            onClick={tourRestart}
+            title="Ver guía de este módulo"
+            className="flex items-center justify-center w-7 h-7 rounded-full border border-indigo-200 dark:border-indigo-700 text-indigo-400 dark:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors text-sm font-bold flex-shrink-0 self-start mt-1"
+          >
+            ?
+          </button>
         </div>
 
         {/* Botones Excel — solo ADMIN y RRHH */}
-        {tienePermiso("empleados:crear") && <div className="flex items-center gap-2 flex-shrink-0">
+        {tienePermiso("empleados:crear") && <div data-tour="empleados-acciones" className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={descargarPlantilla}
             title="Descargar plantilla Excel para importación masiva"
@@ -547,7 +562,7 @@ function EmpleadosPage() {
       </div>
 
       {/* Barra de búsqueda y filtros unificada */}
-      <div className="flex flex-wrap items-center gap-2 mb-4 px-3 py-2.5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+      <div data-tour="empleados-filtros" className="flex flex-wrap items-center gap-2 mb-4 px-3 py-2.5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
 
         {/* Toggle activos / inactivos */}
         <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 flex-shrink-0">
@@ -654,7 +669,7 @@ function EmpleadosPage() {
         )}
       </div>
 
-      <div className="overflow-hidden rounded-lg shadow-md">
+      <div data-tour="empleados-tabla" className="overflow-hidden rounded-lg shadow-md">
         <GestionTable
           registrosFiltrados={registrosFiltradosFinal}
           editarEmpleado={editarEmpleado}

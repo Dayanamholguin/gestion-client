@@ -1,8 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
-import { createContext, useState } from "react";
+import { createContext, useState, useMemo } from "react";
 import "./App.css";
 import { useTheme } from "./Hooks/useTheme";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { TourProvider } from "./contexts/TourContext";
+import useTour from "./Hooks/useTour";
+import TourGuide from "./components/TourGuide";
+import { getSystemSteps } from "./utils/tourSteps";
 import PrivateRoute from "./components/PrivateRoute";
 import Navbar from "./components/Navbar";
 import LoginPage from "./pages/LoginPage";
@@ -19,6 +23,14 @@ import ConfigEmpresaPage from "./pages/ConfigEmpresaPage";
 
 export const ThemeContext = createContext(false);
 
+// Tour del sistema — se ejecuta una vez al entrar al área protegida
+function SystemTour() {
+  const { usuario, tienePermiso } = useAuth();
+  const { run, handleFinish } = useTour("sistema");
+  const steps = useMemo(() => getSystemSteps(usuario, tienePermiso), [usuario, tienePermiso]);
+  return <TourGuide run={run} steps={steps} onFinish={handleFinish} />;
+}
+
 // Layout con sidebar lateral para rutas protegidas
 function ProtectedLayout({ darkMode, toggleTheme }) {
   const { token } = useAuth();
@@ -27,7 +39,9 @@ function ProtectedLayout({ darkMode, toggleTheme }) {
   if (!token) return <Navigate to="/login" replace />;
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <TourProvider>
+      <SystemTour />
+      <div className="flex h-screen overflow-hidden">
       <Navbar
         darkMode={darkMode}
         toggleTheme={toggleTheme}
@@ -58,6 +72,7 @@ function ProtectedLayout({ darkMode, toggleTheme }) {
         </main>
       </div>
     </div>
+    </TourProvider>
   );
 }
 

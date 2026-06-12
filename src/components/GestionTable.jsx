@@ -1,3 +1,20 @@
+import useSort, { SortIcon } from "../Hooks/useSort";
+import usePagination from "../Hooks/usePagination";
+import Pagination from "./Pagination";
+
+const TH_BASE = "px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-white";
+const TH_SORT = `${TH_BASE} cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors`;
+
+const COLS = [
+  { label: "Empleado",  key: "apellido",               sortable: true },
+  { label: "Documento", key: "documento",               sortable: true },
+  { label: "Contacto",  key: null,                      sortable: false },
+  { label: "Salario",   key: "salario",                 sortable: true },
+  { label: "Empresa",   key: "empresa_nombre",          sortable: true },
+  { label: "Estado",    key: "estado_empleado_nombre",  sortable: true },
+  { label: "Acciones",  key: null,                      sortable: false },
+];
+
 function GestionTable({
   registrosFiltrados,
   editarEmpleado,
@@ -10,6 +27,9 @@ function GestionTable({
   setEmpleadosSeleccionados,
   setMostrarModalEstados,
 }) {
+  const { sortedItems, sortConfig, handleSort } = useSort(registrosFiltrados, "apellido");
+  const { paginatedItems, page, setPage, pageSize, setPageSize, totalItems } = usePagination(sortedItems);
+
   const allSelected =
     registrosFiltrados.length > 0 &&
     registrosFiltrados.every((emp) => empleadosSeleccionados.includes(Number(emp.id)));
@@ -18,7 +38,6 @@ function GestionTable({
 
   return (
     <div>
-      {/* Tabla */}
       <div className="overflow-hidden bg-white rounded-lg shadow-md dark:bg-gray-800">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -38,26 +57,28 @@ function GestionTable({
                     }}
                   />
                 </th>
-                {["Empleado", "Documento", "Contacto", "Salario", "Empresa", "Estado", "Acciones"].map((h) => (
+                {COLS.map(({ label, key, sortable }) => (
                   <th
-                    key={h}
-                    className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-white"
+                    key={label}
+                    className={sortable ? TH_SORT : TH_BASE}
+                    onClick={sortable ? () => handleSort(key) : undefined}
                   >
-                    {h}
+                    {label}
+                    {sortable && <SortIcon field={key} sortConfig={sortConfig} />}
                   </th>
                 ))}
               </tr>
             </thead>
 
             <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-              {registrosFiltrados.length === 0 ? (
+              {paginatedItems.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="px-6 py-10 font-medium text-center text-gray-500 dark:text-gray-300">
                     {mostrarInactivos ? "No hay empleados inactivos" : "No hay empleados activos"}
                   </td>
                 </tr>
               ) : (
-                registrosFiltrados.map((emp) => (
+                paginatedItems.map((emp) => (
                   <tr key={emp.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4">
                       <input
@@ -104,17 +125,12 @@ function GestionTable({
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`px-3 py-1 rounded-full text-white text-xs font-semibold ${
-                          emp.estado_empleado_nombre === "Activo"
-                            ? "bg-green-500"
-                            : emp.estado_empleado_nombre === "Licencia"
-                              ? "bg-yellow-500"
-                              : emp.estado_empleado_nombre === "Vacaciones"
-                                ? "bg-blue-500"
-                                : emp.estado_empleado_nombre === "Suspendido"
-                                  ? "bg-orange-500"
-                                  : emp.estado_empleado_nombre === "Reingreso"
-                                    ? "bg-purple-500"
-                                    : "bg-gray-500"
+                          emp.estado_empleado_nombre === "Activo"     ? "bg-green-500"
+                          : emp.estado_empleado_nombre === "Licencia"   ? "bg-yellow-500"
+                          : emp.estado_empleado_nombre === "Vacaciones" ? "bg-blue-500"
+                          : emp.estado_empleado_nombre === "Suspendido" ? "bg-orange-500"
+                          : emp.estado_empleado_nombre === "Reingreso"  ? "bg-purple-500"
+                          : "bg-gray-500"
                         }`}
                       >
                         {emp.estado_empleado_nombre}
@@ -149,6 +165,10 @@ function GestionTable({
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={page} pageSize={pageSize} total={totalItems}
+          onPageChange={setPage} onPageSizeChange={setPageSize}
+        />
       </div>
     </div>
   );

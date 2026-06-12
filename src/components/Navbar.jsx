@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import ThemeButton from "./themeBotton";
 import { useAuth } from "../contexts/AuthContext";
+import { useTourCtx } from "../contexts/TourContext";
 
 // ── Iconos ────────────────────────────────────────────────────────────────────
 const IcoUsers = () => (
@@ -77,12 +78,19 @@ const IcoX = () => (
   </svg>
 );
 
+const IcoTour = () => (
+  <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+  </svg>
+);
+
 // ── Ítem de navegación ────────────────────────────────────────────────────────
-function NavItem({ to, icon, label, collapsed, onNavigate }) {
+function NavItem({ to, icon, label, collapsed, onNavigate, dataTour }) {
   return (
     <NavLink
       to={to}
       onClick={onNavigate}
+      data-tour={dataTour}
       title={collapsed ? label : undefined}
       className={({ isActive }) =>
         `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -103,7 +111,9 @@ function NavItem({ to, icon, label, collapsed, onNavigate }) {
 // ── Sidebar principal ─────────────────────────────────────────────────────────
 function Navbar({ darkMode, toggleTheme, mobileOpen, setMobileOpen }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [tourPanelOpen, setTourPanelOpen] = useState(false);
   const { usuario, logout, tienePermiso, ultimoAcceso } = useAuth();
+  const { enabled: toursEnabled, setEnabled: setToursEnabled, resetAll: resetAllTours } = useTourCtx();
   const navigate = useNavigate();
 
   const handleLogout = () => { logout(); navigate("/login", { replace: true }); };
@@ -137,6 +147,7 @@ function Navbar({ darkMode, toggleTheme, mobileOpen, setMobileOpen }) {
       )}
 
       <aside
+        data-tour="nav-sidebar"
         className={`
           flex flex-col h-screen flex-shrink-0 z-40
           fixed md:sticky top-0 left-0
@@ -181,35 +192,68 @@ function Navbar({ darkMode, toggleTheme, mobileOpen, setMobileOpen }) {
         {/* Navegación */}
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
           {(tienePermiso("*") || usuario?.rol === "ADMIN" || usuario?.rol === "RRHH") && (
-            <NavItem to="/dashboard" icon={<IcoDashboard />} label="Dashboard" collapsed={collapsed} onNavigate={closeMobile} />
+            <NavItem to="/dashboard" icon={<IcoDashboard />} label="Dashboard" collapsed={collapsed} onNavigate={closeMobile} dataTour="nav-dashboard" />
           )}
           {tienePermiso("empleados:listar") && usuario?.rol !== "EMPLEADO" && (
-            <NavItem to="/empleados" icon={<IcoUsers />} label="Empleados" collapsed={collapsed} onNavigate={closeMobile} />
+            <NavItem to="/empleados" icon={<IcoUsers />} label="Empleados" collapsed={collapsed} onNavigate={closeMobile} dataTour="nav-empleados" />
           )}
           {usuario?.rol === "EMPLEADO" && usuario.empleado_id && (
-            <NavItem to={`/empleados/${usuario.empleado_id}`} icon={<IcoUser />} label="Mi Perfil" collapsed={collapsed} onNavigate={closeMobile} />
+            <NavItem to={`/empleados/${usuario.empleado_id}`} icon={<IcoUser />} label="Mi Perfil" collapsed={collapsed} onNavigate={closeMobile} dataTour="nav-perfil" />
           )}
           {usuario && (
-            <NavItem to="/vacaciones" icon={<IcoCalendar />} label="Vacaciones" collapsed={collapsed} onNavigate={closeMobile} />
+            <NavItem to="/vacaciones" icon={<IcoCalendar />} label="Vacaciones" collapsed={collapsed} onNavigate={closeMobile} dataTour="nav-vacaciones" />
           )}
           {tienePermiso("auditoria:ver") && (
-            <NavItem to="/auditoria" icon={<IcoDocument />} label="Auditoría" collapsed={collapsed} onNavigate={closeMobile} />
+            <NavItem to="/auditoria" icon={<IcoDocument />} label="Auditoría" collapsed={collapsed} onNavigate={closeMobile} dataTour="nav-auditoria" />
           )}
           {tienePermiso("usuarios:listar") && (
-            <NavItem to="/usuarios" icon={<IcoUserGroup />} label="Usuarios" collapsed={collapsed} onNavigate={closeMobile} />
+            <NavItem to="/usuarios" icon={<IcoUserGroup />} label="Usuarios" collapsed={collapsed} onNavigate={closeMobile} dataTour="nav-usuarios" />
           )}
           {tienePermiso("catalogos:empresas") && (
-            <NavItem to="/empresas" icon={<IcoBuilding />} label="Empresas" collapsed={collapsed} onNavigate={closeMobile} />
+            <NavItem to="/empresas" icon={<IcoBuilding />} label="Empresas" collapsed={collapsed} onNavigate={closeMobile} dataTour="nav-empresas" />
           )}
           {tienePermiso("catalogos:cargos") && (
-            <NavItem to="/cargos" icon={<IcoBriefcase />} label="Cargos" collapsed={collapsed} onNavigate={closeMobile} />
+            <NavItem to="/cargos" icon={<IcoBriefcase />} label="Cargos" collapsed={collapsed} onNavigate={closeMobile} dataTour="nav-cargos" />
           )}
           {tienePermiso("catalogos:universidades") && (
-            <NavItem to="/universidades" icon={<IcoAcademic />} label="Universidades" collapsed={collapsed} onNavigate={closeMobile} />
+            <NavItem to="/universidades" icon={<IcoAcademic />} label="Universidades" collapsed={collapsed} onNavigate={closeMobile} dataTour="nav-universidades" />
           )}
           {(tienePermiso("*") || usuario?.rol === "ADMIN") && (
-            <NavItem to="/configuracion/empresa" icon={<IcoGear />} label="Configuración" collapsed={collapsed} onNavigate={closeMobile} />
+            <NavItem to="/configuracion/empresa" icon={<IcoGear />} label="Configuración" collapsed={collapsed} onNavigate={closeMobile} dataTour="nav-configuracion" />
           )}
+
+          {/* Panel de tours guiados */}
+          <div className="pt-2 mt-2 border-t border-gray-100 dark:border-gray-700/60">
+            <button
+              data-tour="nav-tour"
+              onClick={() => setTourPanelOpen((v) => !v)}
+              title="Guías del sistema"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full transition-colors text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 ${collapsed ? "md:justify-center" : ""}`}
+            >
+              <IcoTour />
+              <span className={`truncate ${collapsed ? "md:hidden" : ""}`}>Guías del sistema</span>
+            </button>
+
+            {tourPanelOpen && (
+              <div className={`mt-1 mx-1 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-xs ${collapsed ? "md:hidden" : ""}`}>
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="font-medium text-gray-600 dark:text-gray-300">Tours activos</span>
+                  <button
+                    onClick={() => setToursEnabled(!toursEnabled)}
+                    className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${toursEnabled ? "bg-indigo-600" : "bg-gray-300 dark:bg-gray-600"}`}
+                  >
+                    <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${toursEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
+                  </button>
+                </div>
+                <button
+                  onClick={() => { resetAllTours(); setTourPanelOpen(false); }}
+                  className="text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-400 text-left w-full hover:underline py-0.5"
+                >
+                  Reiniciar todos los tours
+                </button>
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* Pie: usuario + tema + cerrar sesión */}
